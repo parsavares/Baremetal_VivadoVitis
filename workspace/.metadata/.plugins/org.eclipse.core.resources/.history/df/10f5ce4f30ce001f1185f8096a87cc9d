@@ -1,0 +1,58 @@
+/******************************************************************************
+* Author: Hsiu-Pin Hsu
+* Date: 2024.08.10
+******************************************************************************/
+
+#include <stdio.h>
+#include "xil_printf.h"
+
+#include "xparameters.h"
+#include "xgpio.h"
+#include "xil_types.h"
+
+// Defined in xparameters.h
+// GPIO 0
+// GPIO 1
+#define BTN_BA XPAR_AXI_GPIO_BUTTONS_BASEADDR
+// GPIO 2
+#define LED_BA XPAR_AXI_GPIO_LED_BASEADDR
+
+int main()
+{
+
+	XGpio_Config *cfg_ptr;
+
+	XGpio led_device;
+	XGpio btn_device;
+
+	u32 swt_data;
+	u32 btn_data;
+	u32 led_data;
+
+	xil_printf("Entered function main\r\n");
+
+	// Initialize Button
+	cfg_ptr = XGpio_LookupConfig(BTN_BA);
+	XGpio_CfgInitialize(&btn_device, cfg_ptr, cfg_ptr->BaseAddress);
+
+	// Initialize LED
+	cfg_ptr = XGpio_LookupConfig(LED_BA);
+	XGpio_CfgInitialize(&led_device, cfg_ptr, cfg_ptr->BaseAddress);
+
+	// Set data direction
+	XGpio_SetDataDirection(&btn_device, 1, 0x0000000F); // 4-bit buttons
+	XGpio_SetDataDirection(&led_device, 1, 0xFFFF0000); // 16-bit LEDs
+
+	while (1) {
+		swt_data = 0x0000FFFF;
+		btn_data = XGpio_DiscreteRead(&btn_device, 1);
+		if(btn_data!=0){
+			led_data = swt_data;
+		}else{
+			led_data = 0x00000000;
+		}
+		XGpio_DiscreteWrite(&led_device, 1, led_data);
+	}
+
+	return 0;
+}
